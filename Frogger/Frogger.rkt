@@ -74,17 +74,20 @@
 (define T-TOTAL-L ; total length of all turtles and gaps in each row
   (* T-GROUPS (+ (* T-L T-NUM) DISTANCE-BETWEEN-TS)))
 
-; Information
-(define LIVE (bitmap "img/live.png"))
-(define LIVE-WIDTH
-  (/ (image-height LIVE) GRID-WIDTH))
+; Information  ; 
+(define INIT-LIVES 3)
+(define INIT-SCORE 500)
+(define INFO-FONT-SIZE 20)
+(define SCORE-INIT-X 8)
+(define LIVES-INIT-X 20)
+(define INFO-Y 68)
+(define WIN_FROG (bitmap "img/win_frog.png"))
 (define GAME-OVER (place-image (text "Game Over :(" 40 'red)
                                (/ WIDTH 2) (/ HEIGHT 2)
                                (empty-scene WIDTH HEIGHT)))
-(define WIN (place-image (text "Win! :)" 40 'green)
-                         (/ WIDTH 2) (/ HEIGHT 2)
-                         (empty-scene WIDTH HEIGHT)))
-(define DIFFICULTY 2)  ; entities move faster when DIFFICULTY is greater
+(define WIN (place-image (text "Win! :)" 40 'green) (/ WIDTH 2) (/ HEIGHT 2)
+                         (place-image WIN_FROG 200 200 (empty-scene WIDTH HEIGHT))))
+(define DIFFICULTY 3)  ; entities move faster when DIFFICULTY is greater
 
 
 ;;; A Direction is one of:
@@ -199,34 +202,52 @@
 (define lot2 (list t1))
 
 
+;;; An Info is a (make-info number number)
+(define-struct info (score lives))
+
+;; Data Example:
+(define info0 (make-info INIT-SCORE INIT-LIVES))
+
+
 ;;; A World is a
 ;; (make-world Player [List-of Vehicle] [List-of Plank] [List-of Turtles])
-(define-struct world (player vehicles planks turtles))
+(define-struct world (player vehicles planks turtles info))
 
 ;; Data Examples:
-(define EMPTY-W (make-world player0 lov0 lop0 lot0))
-(define W0 (make-world player0 lov1 lop1 lot1))
-(define SIMPLE-W (make-world player0 lov2 lop2 lot2))
+(define EMPTY-W (make-world player0 lov0 lop0 lot0 info0))
+(define W0 (make-world player0 lov1 lop1 lot1 info0))
+(define SIMPLE-W (make-world player0 lov2 lop2 lot2 info0))
 
 
 ;;; Drawing the world
 
+;; draw-all: World -> Image
+;; draw the world base on condition
+(define (draw-all aw)
+  (if (dead? aw) (draw-world (reset-world aw)) (draw-world aw)))
+
 ;; draw-world: World -> Image
 ;; draw the current world
 (check-expect (draw-world EMPTY-W)
-              (place-image F-IMG-U 370 630 BG))
+              (place-image F-IMG-U 370 630
+                           (place-image (text "Score: 500" 20 'green) 80 680
+                                        (place-image (text "Lives: 3" 20 'green) 200 680 BG))))
 (check-expect (draw-world SIMPLE-W)
               (place-image F-IMG-U 370 630
                            (place-image V-IMG-R 80 580
                                         (place-image P-IMG -20 280
                                                      (place-image T-IMG 20 230
-                                                                  BG)))))
+                                                                  (place-image (text "Score: 500" 20 'green) 80 680
+                                                                               (place-image (text "Lives: 3" 20 'green) 200 680    
+                                                                                            BG)))))))
 (define (draw-world aw)
   (draw-player (world-player aw)
                (draw-vehicles (world-vehicles aw)
                               (draw-planks (world-planks aw)
                                            (draw-turtles (world-turtles aw)
-                                                         BG)))))
+                                                         (draw-score (info-score (world-info aw))
+                                                                     (draw-lives (info-lives (world-info aw))
+                                                                                 BG)))))))
 
 ;; draw-player: Player Image -> Image
 ;; draw the image of a frog on another image based on the frog's direction
@@ -284,23 +305,56 @@
   ;; [Turtle Image -> Image] Image [List-of Turtle] -> Image
   (foldr (λ (t i) (draw (turtle-x t) (turtle-y t) T-IMG i)) img alot))
 
+;; draw-info: Info Image -> Image
+;; draw the game information on an image
+(check-expect (draw-info info0 BG)
+              (place-image (text "Score: 500" 20 'green) 80 680
+                           (place-image (text "Lives: 3" 20 'green) 200 680 BG)))
+(define (draw-info i img)
+  (draw-score (info-score i)
+              (draw-lives (info-lives i) img)))                   
 
+;; draw-score: Number Image -> Image
+;; produce the game score as an image
+(check-expect (draw-score 1000 BG)
+              (place-image (text "Score: 1000" 20 'green) 80 680 BG))
+(define (draw-score score img)
+  (draw SCORE-INIT-X INFO-Y
+        (text (string-append "Score: " (number->string score)) INFO-FONT-SIZE 'green)
+        img))
+
+;; draw-lives: Number Image -> Image
+;; produce the currentn number of lives as an image
+(check-expect (draw-lives 3 BG)
+              (place-image (text "Lives: 3" 20 'green) 200 680 BG))
+(define (draw-lives lives img)
+  (draw LIVES-INIT-X INFO-Y
+        (text (string-append "Lives: " (number->string lives)) INFO-FONT-SIZE 'green)
+        img))
 
 ;;; Moving
 
+;; move-all: World -> World
+;; move the world base on condition
+(define (move-all aw)
+  (if (dead? aw) (move-world (reset-world aw)) (move-world aw)))
+
 ;; move-world: World -> World
 ;; move the given world at each tick
-(check-expect (move-world EMPTY-W) EMPTY-W)
+(check-expect (move-world EMPTY-W)
+              (make-world player0 lov0 lop0 lot0 (make-info 499 3)))
 (check-expect (move-world SIMPLE-W)
               (make-world player0
                           (list (make-vehicle 9 58 "right"))
                           (list (make-plank -1 28 "right"))
-                          (list (make-turtle 1 23 "left"))))
+                          (list (make-turtle 1 23 "left"))
+                          (make-info 499 3)))
 (define (move-world aw)
   (make-world (ride-move (world-player aw) (world-planks aw) (world-turtles aw))
               (move-vehicles (world-vehicles aw))
               (move-planks (world-planks aw))
-              (move-turtles (world-turtles aw))))
+              (move-turtles (world-turtles aw))
+              (make-info (change-score (info-score (world-info aw))) (info-lives (world-info aw)))))
 
 ;; move-vehicles: [List-of Vehicle] -> [List-of Vehicle]
 ;; move the given list of vehicles at each tick
@@ -423,6 +477,12 @@
   (and (< n1 (+ n2 range))
        (> n1 (- n2 range))))
 
+;; change-score: Score -> Score
+;; deduct one from score on each tick
+(check-expect (change-score INIT-SCORE) 499)
+(define (change-score score)
+  (- score 1))
+
 
 
 ;;; Key-handler
@@ -430,16 +490,16 @@
 ;; move-world-player: World Direction -> World
 ;; change the position of the player in the given world when a key is pressed
 (check-expect (move-world-player W0 "up")
-              (make-world (make-player 37 58 "up") lov1 lop1 lot1))
+              (make-world (make-player 37 58 "up") lov1 lop1 lot1 info0))
 (check-expect (move-world-player W0 "down")
-              (make-world (make-player 37 68 "down") lov1 lop1 lot1))
+              (make-world (make-player 37 68 "down") lov1 lop1 lot1 info0))
 (check-expect (move-world-player W0 "left")
-              (make-world (make-player 32 63 "left") lov1 lop1 lot1))
+              (make-world (make-player 32 63 "left") lov1 lop1 lot1 info0))
 (check-expect (move-world-player W0 "right")
-              (make-world (make-player 42 63 "right") lov1 lop1 lot1))
+              (make-world (make-player 42 63 "right") lov1 lop1 lot1 info0))
 (define (move-world-player aw adir)
   (make-world (move-player (world-player aw) adir)
-              (world-vehicles aw) (world-planks aw) (world-turtles aw)))
+              (world-vehicles aw) (world-planks aw) (world-turtles aw) (world-info aw)))
 
 ;; move-player: Player Direction -> Player
 ;; change the position of the given player when a key is pressed
@@ -472,17 +532,34 @@
 ;;; End detection
 
 ;; end?: World -> Boolean
-;; does the game end?
-(check-expect (end? (make-world (make-player 4 58 "up") lov1 lop1 lot1)) #true)
-(check-expect (end? (make-world (make-player 31 28 "up") lov1 lop1 lot1)) #true)
-(check-expect (end? (make-world (make-player 0 28 "up") lov1 lop1 lot1)) #true)
-(check-expect (end? (make-world (make-player 8 3 "up") lov1 lop1 lot1)) #true)
+;; does the game over?
 (check-expect (end? W0) #false)
+(check-expect (end? (make-world player0 lov1 lop1 lot1 (make-info 1000 0))) #true)
+(check-expect (end? (make-world player0 lov1 lop1 lot1 (make-info 0 1))) #true)
 (define (end? aw)
+  (or (<= (info-lives (world-info aw)) 0)
+      (<= (info-score (world-info aw)) 0)
+      (win? (world-player aw))))
+
+;; reset-world: World -> World
+(check-expect (reset-world W0) (make-world player0 lov1 lop1 lot1 (make-info 400 2)))
+(define (reset-world aw)
+  (make-world player0 lov1 lop1 lot1
+              (make-info (- (info-score (world-info aw)) 100)
+                         (- (info-lives (world-info aw)) 1))))
+
+;; dead?: World -> Boolean
+;; does current player dead?
+(check-expect (dead? (make-world (make-player 4 58 "up") lov1 lop1 lot1 info0)) #true)
+(check-expect (dead? (make-world (make-player 31 28 "up") lov1 lop1 lot1 info0)) #true)
+(check-expect (dead? (make-world (make-player 0 28 "up") lov1 lop1 lot1 info0)) #true)
+(check-expect (dead? (make-world player0 lov1 lop1 lot1 (make-info 0 3))) #true)
+(check-expect (dead? W0) #false)
+(define (dead? aw)
   (or (hit? (world-player aw) (world-vehicles aw))
       (sink? (world-player aw) (world-planks aw) (world-turtles aw))
       (out? (world-player aw))
-      (win? (world-player aw))))
+      (<= (info-score (world-info aw)) 0)))
 
 ;; hit?: Player [List-of Vehicle] -> Boolean
 ;; is the player hit by any vehicle?
@@ -529,21 +606,22 @@
 
 ;; show-end: World -> Image
 ;; show the game-over image
-(check-expect
- (show-end (make-world (make-player 45 27 "up") lov1 lop1 lot1)) GAME-OVER)
-(check-expect
- (show-end (make-world (make-player 40 2 "up") lov1 lop1 lot1)) WIN)
 (define (show-end aw)
-  (cond [(win? (world-player aw)) WIN]
-        [else GAME-OVER]))
+  (cond [(win? (world-player aw))
+         (place-image (text (string-append "Score: "
+                                           (number->string (info-score (world-info aw))))
+                            40 'green) 370 400 WIN)]
+        [else (place-image (text (string-append "Score: "
+                                                (number->string (info-score (world-info aw))))
+                                 40 'green) 370 400 GAME-OVER)]))
+
 
 
 ;;; World -> World
 ;; launch the game
 (big-bang W0
-          [to-draw draw-world]
-          [on-tick move-world (/ 1 DIFFICULTY)]
+          [to-draw draw-all]
+          [on-tick move-all (/ 1 DIFFICULTY)]
           [on-key move-world-player]
           [stop-when end? show-end])
-
 
