@@ -2,23 +2,16 @@
 ;; about the language level of this file in a form that our tools can easily process.
 #reader(lib "htdp-intermediate-lambda-reader.ss" "lang")((modname Frogger) (read-case-sensitive #t) (teachpacks ((lib "image.rkt" "teachpack" "2htdp") (lib "universe.rkt" "teachpack" "2htdp") (lib "batch-io.rkt" "teachpack" "2htdp"))) (htdp-settings #(#t constructor repeating-decimal #f #t none #f ((lib "image.rkt" "teachpack" "2htdp") (lib "universe.rkt" "teachpack" "2htdp") (lib "batch-io.rkt" "teachpack" "2htdp")) #f)))
 ;;;; ---------------------------------------------------------------------------
-;; Frogger revisited
-
-;;;; Rules for player
-;; 1. The player losses if the frog is hit by any vehicle in traffic rows.
-;; 2. The player losses if the frog is in the river but not on any plank or
-;; turtle.
-;; 3. The player losses if the frog leaves the left or right bounds of the
-;; screen.
-;; 4. The frog is not able to leave the botton bound of the screen.
-;; 5. The player wins if the frog reaches the top of the screen.
-
+;;;; TEACHPACKS
 (require 2htdp/image)
 (require 2htdp/universe)
 
-;;;; Data Definitions:
 
-;;; Constants
+
+;;;; ---------------------------------------------------------------------------
+;;;; DATA DEFINITIONS:
+
+;;; Definition of Constants
 ; Background
 (define GRID-WIDTH 10)
 (define MAX-X 74)   ; max x coordinate of the background
@@ -37,17 +30,23 @@
                         (empty-scene WIDTH HEIGHT)))  ; background
 
 ; Frog
-(define F-IMG-U (bitmap "img/frog_up.png")) ; frog image when its direction is "up"
-(define F-IMG-D (bitmap "img/frog_down.png")) ; frog image when its direction is "down"
-(define F-IMG-R (bitmap "img/frog_right.png")) ; frog image when its direction is "right"
-(define F-IMG-L (bitmap "img/frog_left.png")) ; frog image when its direction is "left"
+(define F-IMG-U  ; frog image when its direction is "up"
+  (bitmap "img/frog_up.png")) 
+(define F-IMG-D  ; frog image when its direction is "down"
+  (bitmap "img/frog_down.png")) 
+(define F-IMG-R  ; frog image when its direction is "right"
+  (bitmap "img/frog_right.png")) 
+(define F-IMG-L  ; frog image when its direction is "left"
+  (bitmap "img/frog_left.png")) 
 (define FROG-STEP 5)  ; length of frog's each step
 (define F-LENGTH
   (/ (image-height F-IMG-U) GRID-WIDTH))  ; frog image size
 
 ; Vehicle
-(define V-IMG-R (bitmap "img/vehicle_right.png")) ; vehicle image when its direction is "right"
-(define V-IMG-L (bitmap "img/vehicle_left.png")) ; vehicle image when its direction is "left"
+(define V-IMG-R ; vehicle image when its direction is "right"
+  (bitmap "img/vehicle_right.png")) 
+(define V-IMG-L ; vehicle image when its direction is "left"
+  (bitmap "img/vehicle_left.png")) 
 (define V-LENGTH (/ (image-width V-IMG-R) GRID-WIDTH)) ; length of a vehicle
 (define V-WIDTH (/ (image-height V-IMG-R) GRID-WIDTH))  ; width of a vehicle
 (define DISTANCE-BETWEEN-VS 14)  ; distance bewteen two vehicles
@@ -56,40 +55,46 @@
   (* V-NUM (+ V-LENGTH DISTANCE-BETWEEN-VS)))
 
 ; Plank
-(define P-IMG (bitmap "img/plank.png"))
-(define P-LENGTH (/ (image-width P-IMG) GRID-WIDTH)) ; length of a plank
+(define P-IMG (bitmap "img/plank.png"))   ; image that represents a plank
+(define P-LENGTH (/ (image-width P-IMG) GRID-WIDTH))   ; length of a plank
 (define P-WIDTH (/ (image-height P-IMG) GRID-WIDTH))   ; width of a plank
 (define DISTANCE-BETWEEN-PS 10)  ; distance bwtween two planks
-(define P-NUM 4)  ; number of planks per row
-(define P-TOTAL-L ; total length of all planks and gaps in each row
+(define P-NUM 4)   ; number of planks per row
+(define P-TOTAL-L  ; total length of all planks and gaps in each row
   (* P-NUM (+ P-LENGTH DISTANCE-BETWEEN-PS)))
 
 ; Turtle
-(define T-IMG (bitmap "img/turtle.png"))
-(define T-L
-  (/ (image-height T-IMG) GRID-WIDTH))   ; turtle image size
+(define T-IMG (bitmap "img/turtle.png"))   ; image that represents a turtle
+(define T-L    ; turtle image size
+  (/ (image-height T-IMG) GRID-WIDTH))   
 (define DISTANCE-BETWEEN-TS 16)  ; distance bewteen two separated turtles
 (define T-NUM 3)     ; number of turtles for group
 (define T-GROUPS 3)  ; number of turtle groups per row
-(define T-TOTAL-L ; total length of all turtles and gaps in each row
+(define T-TOTAL-L    ; total length of all turtles and gaps in each row
   (* T-GROUPS (+ (* T-L T-NUM) DISTANCE-BETWEEN-TS)))
 
 ; Information  ; 
-(define INIT-LIVES 3)
-(define INIT-SCORE 500)
-(define INFO-FONT-SIZE 20)
-(define SCORE-INIT-X 8)
-(define LIVES-INIT-X 20)
-(define INFO-Y 68)
-(define WIN_FROG (bitmap "img/win_frog.png"))
-(define GAME-OVER (place-image (text "Game Over :(" 40 'red)
-                               (/ WIDTH 2) (/ HEIGHT 2)
-                               (empty-scene WIDTH HEIGHT)))
-(define WIN (place-image (text "Win! :)" 40 'green) (/ WIDTH 2) (/ HEIGHT 2)
-                         (place-image WIN_FROG 200 200 (empty-scene WIDTH HEIGHT))))
-(define DIFFICULTY 3)  ; entities move faster when DIFFICULTY is greater
+(define INIT-LIVES 3)   ; number of lives when the game starts
+(define INIT-SCORE 500) ; score value when the game starts
+(define INFO-FONT-SIZE 20)  ; font size of game information (score and lives)
+(define SCORE-INIT-X 8)     ; x coordinate of score information
+(define LIVES-INIT-X 20)    ; x coordinate of lives information
+(define INFO-Y 68)          ; y coordinate of information
+(define WIN-FROG (bitmap "img/win_frog.png"))   ; image shown when player wins
+(define GAME-OVER  ; screne shown when player loses       
+  (place-image (text "Game Over :(" 40 'red)
+               (/ WIDTH 2) (/ HEIGHT 2)
+               (empty-scene WIDTH HEIGHT)))
+
+(define WIN        ; screne shown when player wins
+  (place-image (text "Win! :)" 40 'green) (/ WIDTH 2) (/ HEIGHT 2)
+               (place-image WIN-FROG 200 200
+                            (empty-scene WIDTH HEIGHT))))
+
+(define DIFFICULTY 5)  ; entities move faster when DIFFICULTY is greater
 
 
+;;; Definition of Direction
 ;;; A Direction is one of:
 ;; - "left"
 ;; - "right"
@@ -97,6 +102,7 @@
 ;; - "down"
 
 
+;;;; Definition of Player
 ;;; A Player is a (make-player Number Number Direction)
 ;; INTERP: represents the x and y coordinates and the direction of a player
 (define-struct player (x y dir))
@@ -108,6 +114,7 @@
 (define player3 (make-player 37 63 "right"))
 
 
+;;; Definition of Vehicle
 ;;; A Vehicle is a (make-vehicle Number Number Direction)
 (define-struct vehicle (x y dir))
 
@@ -134,6 +141,7 @@
 (define v20 (make-vehicle 64 38 "right"))
 
 
+;;; Definition of List of Vehicles
 ;;; [List-of Vehicle]
 
 ;; Data Examples:
@@ -143,6 +151,7 @@
 (define lov2 (list v1))
 
 
+;;; Definition of Plank
 ;;; A Plank is a (make-plank Number Number Direction)
 (define-struct plank (x y dir))
 
@@ -161,6 +170,7 @@
 (define p12 (make-plank 66 8 "right"))
 
 
+;;; Definition of List of Planks
 ;;; [List-of Plank]
 
 ;; Data Example:
@@ -169,6 +179,7 @@
 (define lop2 (list p1))
 
 
+;;; Definition of Turtle
 ;;; A Turtle is a (make-turtle Number Number Direction)
 (define-struct turtle (x y dir))
 
@@ -193,6 +204,7 @@
 (define t18 (make-turtle 75 13 "left"))
 
 
+;;; Definition of List of Turtles
 ;;; [List-of Turtle]
 
 ;; Data Example:
@@ -202,6 +214,7 @@
 (define lot2 (list t1))
 
 
+;;; Definition of Information
 ;;; An Info is a (make-info number number)
 (define-struct info (score lives))
 
@@ -209,6 +222,7 @@
 (define info0 (make-info INIT-SCORE INIT-LIVES))
 
 
+;;; Definition of World
 ;;; A World is a
 ;; (make-world Player [List-of Vehicle] [List-of Plank] [List-of Turtles])
 (define-struct world (player vehicles planks turtles info))
@@ -218,6 +232,10 @@
 (define W0 (make-world player0 lov1 lop1 lot1 info0))
 (define SIMPLE-W (make-world player0 lov2 lop2 lot2 info0))
 
+
+
+;;;; ---------------------------------------------------------------------------
+;;;; FUNCTIONS:
 
 ;;; Drawing the world
 
@@ -309,7 +327,8 @@
 ;; draw the game information on an image
 (check-expect (draw-info info0 BG)
               (place-image (text "Score: 500" 20 'green) 80 680
-                           (place-image (text "Lives: 3" 20 'green) 200 680 BG)))
+                           (place-image (text "Lives: 3" 20 'green) 200 680
+                                        BG)))
 (define (draw-info i img)
   (draw-score (info-score i)
               (draw-lives (info-lives i) img)))                   
@@ -320,7 +339,8 @@
               (place-image (text "Score: 1000" 20 'green) 80 680 BG))
 (define (draw-score score img)
   (draw SCORE-INIT-X INFO-Y
-        (text (string-append "Score: " (number->string score)) INFO-FONT-SIZE 'green)
+        (text (string-append "Score: " (number->string score))
+              INFO-FONT-SIZE 'green)
         img))
 
 ;; draw-lives: Number Image -> Image
@@ -329,8 +349,11 @@
               (place-image (text "Lives: 3" 20 'green) 200 680 BG))
 (define (draw-lives lives img)
   (draw LIVES-INIT-X INFO-Y
-        (text (string-append "Lives: " (number->string lives)) INFO-FONT-SIZE 'green)
+        (text (string-append "Lives: " (number->string lives))
+              INFO-FONT-SIZE 'green)
         img))
+
+
 
 ;;; Moving
 
@@ -350,11 +373,14 @@
                           (list (make-turtle 1 23 "left"))
                           (make-info 499 3)))
 (define (move-world aw)
-  (make-world (ride-move (world-player aw) (world-planks aw) (world-turtles aw))
+  (make-world (ride-move (world-player aw)
+                         (world-planks aw)
+                         (world-turtles aw))
               (move-vehicles (world-vehicles aw))
               (move-planks (world-planks aw))
               (move-turtles (world-turtles aw))
-              (make-info (change-score (info-score (world-info aw))) (info-lives (world-info aw)))))
+              (make-info (change-score (info-score (world-info aw)))
+                         (info-lives (world-info aw)))))
 
 ;; move-vehicles: [List-of Vehicle] -> [List-of Vehicle]
 ;; move the given list of vehicles at each tick
@@ -499,7 +525,10 @@
               (make-world (make-player 42 63 "right") lov1 lop1 lot1 info0))
 (define (move-world-player aw adir)
   (make-world (move-player (world-player aw) adir)
-              (world-vehicles aw) (world-planks aw) (world-turtles aw) (world-info aw)))
+              (world-vehicles aw)
+              (world-planks aw)
+              (world-turtles aw)
+              (world-info aw)))
 
 ;; move-player: Player Direction -> Player
 ;; change the position of the given player when a key is pressed
@@ -521,7 +550,7 @@
 ;; add one step (5 grids) to y if it remains above the bottom of the screen,
 ;; otherwise keep y
 (check-expect (above-bottom 10) 15)
-(check-expect (above-bottom 63) 68)
+(check-expect (above-bottom 68) 68)
 (define (above-bottom y)
   (if (<= (+ y FROG-STEP) (- MAX-Y (/ F-LENGTH 2)))
       (+ y FROG-STEP)
@@ -529,20 +558,23 @@
 
 
 
-;;; End detection
+;;; Status detection
 
 ;; end?: World -> Boolean
 ;; does the game over?
 (check-expect (end? W0) #false)
-(check-expect (end? (make-world player0 lov1 lop1 lot1 (make-info 1000 0))) #true)
-(check-expect (end? (make-world player0 lov1 lop1 lot1 (make-info 0 1))) #true)
+(check-expect (end? (make-world player0 lov1 lop1 lot1 (make-info 1000 0)))
+              #true)
+(check-expect (end? (make-world player0 lov1 lop1 lot1 (make-info 0 1)))
+              #true)
 (define (end? aw)
   (or (<= (info-lives (world-info aw)) 0)
       (<= (info-score (world-info aw)) 0)
       (win? (world-player aw))))
 
 ;; reset-world: World -> World
-(check-expect (reset-world W0) (make-world player0 lov1 lop1 lot1 (make-info 400 2)))
+(check-expect (reset-world W0)
+              (make-world player0 lov1 lop1 lot1 (make-info 400 2)))
 (define (reset-world aw)
   (make-world player0 lov1 lop1 lot1
               (make-info (- (info-score (world-info aw)) 100)
@@ -550,10 +582,14 @@
 
 ;; dead?: World -> Boolean
 ;; does current player dead?
-(check-expect (dead? (make-world (make-player 4 58 "up") lov1 lop1 lot1 info0)) #true)
-(check-expect (dead? (make-world (make-player 31 28 "up") lov1 lop1 lot1 info0)) #true)
-(check-expect (dead? (make-world (make-player 0 28 "up") lov1 lop1 lot1 info0)) #true)
-(check-expect (dead? (make-world player0 lov1 lop1 lot1 (make-info 0 3))) #true)
+(check-expect (dead? (make-world (make-player 4 58 "up") lov1 lop1 lot1 info0))
+              #true)
+(check-expect (dead? (make-world (make-player 31 28 "up") lov1 lop1 lot1 info0))
+              #true)
+(check-expect (dead? (make-world (make-player 0 28 "up") lov1 lop1 lot1 info0))
+              #true)
+(check-expect (dead? (make-world player0 lov1 lop1 lot1 (make-info 0 3)))
+              #true)
 (check-expect (dead? W0) #false)
 (define (dead? aw)
   (or (hit? (world-player aw) (world-vehicles aw))
@@ -606,16 +642,24 @@
 
 ;; show-end: World -> Image
 ;; show the game-over image
+(check-expect (show-end (make-world (make-player 40 3 "up")
+                                    lov1 lop1 lot1 (make-info 300 2)))
+              (place-image (text "Score: 300" 40 'green) 370 400 WIN))
+(check-expect (show-end (make-world player0 lov1 lop1 lot1 (make-info 0 1)))
+              GAME-OVER)
 (define (show-end aw)
   (cond [(win? (world-player aw))
-         (place-image (text (string-append "Score: "
-                                           (number->string (info-score (world-info aw))))
-                            40 'green) 370 400 WIN)]
-        [else (place-image (text (string-append "Score: "
-                                                (number->string (info-score (world-info aw))))
-                                 40 'green) 370 400 GAME-OVER)]))
+         (place-image (text
+                       (string-append "Score: "
+                                      (number->string
+                                       (info-score (world-info aw))))
+                       40 'green) 370 400 WIN)]
+        [else GAME-OVER]))
 
 
+
+;;;; ---------------------------------------------------------------------------
+;;;; LAUNCH THE GAME
 
 ;;; World -> World
 ;; launch the game
