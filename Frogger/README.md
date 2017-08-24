@@ -9,7 +9,7 @@ Ways to lose a frog life:
 2. Jumping into the river's water
 3. Running off the side of the screen
 
-###Scoring
+### Scoring
 
 The game starts with a score of 500 points. Score will be deducted at the rate of 5 points/second, and when a frog life loses, 100 points will be deducted from the score. 
 
