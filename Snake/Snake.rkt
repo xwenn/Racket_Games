@@ -12,21 +12,24 @@
 ;;;; DATA DEFINITIONS:
 
 ;;; Definition of Constants
-(define INIT-SCORE 0)
-(define SCORE-X 22)
-(define SCORE-Y 2)
-(define SCORE-FONT-SIZE 20)
-(define SEG-RADIUS 5)
-(define GRID-WIDTH (* SEG-RADIUS 2))
-(define HEIGHT (* 30 GRID-WIDTH))
-(define WIDTH (* 30 GRID-WIDTH))
-(define BACKGROUND (bitmap "img/background.png"))
-(define FOOD-IMG (circle SEG-RADIUS 'solid 'green))
-(define SEG-IMG (circle SEG-RADIUS 'solid 'red))
-(define GAME-OVER (place-image
-                   (text "Game Over" 20 'white)
-                   (/ HEIGHT 2) (/ WIDTH 2) BACKGROUND))
-(define DIFFICULTY 10)
+(define INIT-SCORE 0)   ; score value when the game starts
+(define SCORE-X 22)     ; x-coordinate of score information
+(define SCORE-Y 2)      ; y-coordinate of score information
+(define SCORE-FONT-SIZE 20)  ; font-size of score information
+(define SEG-RADIUS 5)   ; radius of the circle representing a seg
+(define GRID-WIDTH (* SEG-RADIUS 2))   ; width of each grid
+(define HEIGHT (* 30 GRID-WIDTH))      ; width of background
+(define WIDTH (* 30 GRID-WIDTH))       ; height of background
+(define BACKGROUND (bitmap "img/background.png"))   ; background image
+(define FOOD-IMG    ; image that represents food
+  (circle SEG-RADIUS 'solid 'green))
+(define SEG-IMG     ; image that represents a snake seg
+  (circle SEG-RADIUS 'solid 'red))   
+(define GAME-OVER   ; game-over information
+  (place-image
+  (text "Game Over" 20 'white)
+  (/ HEIGHT 2) (/ WIDTH 2) BACKGROUND))
+(define DIFFICULTY 10)  ; snake moves faster when DIFFICULTY is greater
 
 
 ;;; Definition of Snake
@@ -85,12 +88,20 @@
 ;; draw-world: World -> Image
 ;; draw the current world
 (check-expect (draw-world world0)
-              (place-image SEG-IMG (* 3 GRID-WIDTH) (* 18 GRID-WIDTH)
-                           (place-image SEG-IMG (* 3 GRID-WIDTH) (* 19 GRID-WIDTH)
-                                        (place-image SEG-IMG (* 3 GRID-WIDTH) (* 20 GRID-WIDTH)
-                                                     (place-image
-                                                      FOOD-IMG (* 7 GRID-WIDTH) (* 15 GRID-WIDTH)
-                                                      (place-image (text "Score: 0" 20 'green) 220 20
+              (place-image SEG-IMG
+                           (* 3 GRID-WIDTH)
+                           (* 18 GRID-WIDTH)
+                           (place-image SEG-IMG
+                                        (* 3 GRID-WIDTH)
+                                        (* 19 GRID-WIDTH)
+                                        (place-image SEG-IMG
+                                                     (* 3 GRID-WIDTH)
+                                                     (* 20 GRID-WIDTH)
+                                                     (place-image FOOD-IMG
+                                                                  (* 7 GRID-WIDTH)
+                                                                  (* 15 GRID-WIDTH)
+                                                                  (place-image
+                                                                   (text "Score: 0" 20 'green) 220 20
                                                                    BACKGROUND))))))
 (define (draw-world w)
   (draw-snake (snake-segs (world-snake w))
@@ -116,13 +127,17 @@
 ;; draw the snake segments onto the given image
 (check-expect (draw-snake snake-segs0 BACKGROUND)
               (place-image SEG-IMG (* 3 GRID-WIDTH) (* 18 GRID-WIDTH)
-                           (place-image SEG-IMG (* 3 GRID-WIDTH) (* 19 GRID-WIDTH)
-                                        (place-image SEG-IMG (* 3 GRID-WIDTH) (* 20 GRID-WIDTH)
+                           (place-image SEG-IMG
+                                        (* 3 GRID-WIDTH)
+                                        (* 19 GRID-WIDTH)
+                                        (place-image SEG-IMG
+                                                     (* 3 GRID-WIDTH)
+                                                     (* 20 GRID-WIDTH)
                                                      BACKGROUND))))
 (define (draw-snake alop img)
   (foldr (λ (p i) (draw (posn-x p) (posn-y p) SEG-IMG i)) img alop))
 
-;; draw_score: Number Image -> Image
+;; draw-score: Number Image -> Image
 ;; draw the score information onto the given image
 (check-expect (draw-score 10 BACKGROUND)
               (place-image (text "Score: 10" 20 'green) 220 20 BACKGROUND))
@@ -244,7 +259,7 @@
 
 ;;; Collision detection
 
-;; World -> Boolean
+;; collision?: World -> Boolean
 ;; did the snake collide with an edge of the grid or itself?
 (check-expect (collision? world0) false)
 (check-expect (collision? 
@@ -300,6 +315,9 @@
               SCORE-FONT-SIZE 'white) GAME-OVER))
 
 
+
+;;;; ---------------------------------------------------------------------------
+;;;; LAUNCH THE GAME
 ;; World -> World
 ;; launches the snake game
 (big-bang world0
