@@ -15,6 +15,6 @@ The game starts with a score of 500 points. Score will be deducted at the rate o
 
 ### How to start the program:
 
-Download the Frogger folder, start the program from your terminal `$ racket Frogger.rkt` or open the program file with DrRacket and click Run.
+Download the Frogger folder, start the program from your terminal `$ racket Frogger.rkt` or open the program file with DrRacket and click **Run**.
 
 [Demonstration Video](https://youtu.be/H45emYuoKAk)
