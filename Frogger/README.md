@@ -13,4 +13,8 @@ Ways to lose a frog life:
 
 The game starts with a score of 500 points. Score will be deducted at the rate of 5 points/second, and when a frog life loses, 100 points will be deducted from the score. 
 
+### How to start the program:
+
+Download the folder, start the program from your terminal `$ racket Frogger.rkt` or open the program file with DrRacket and click Run.
+
 [Demonstration Video](https://youtu.be/H45emYuoKAk)
